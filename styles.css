@@ -7,10 +7,15 @@
 
 /* Body Styles */
 body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: #f9f9f9;
+    font-family: "Roboto Slab", serif;
+    font-style: normal;
+    font-optical-sizing: auto;
     color: #333;
     line-height: 1.6;
+    margin: 0;
+    padding-top: 130px;
+    --tw-bg-opacity: 1;
+    background-color: rgb(19 19 19 / var(--tw-bg-opacity));
 }
 
 /* Container */
@@ -20,12 +25,24 @@ body {
     padding: 20px;
 }
 
+.header {
+    background-image: url('space.webp');
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: fit-content;
+}
+
 /* Header Styles */
 header {
-    background: #2c3e50;
+    font-family: "Freeman", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: .02em;
     color: white;
     padding: 20px 0;
     text-align: center;
+    top: 0;
 }
 
 header h1 {
@@ -35,8 +52,10 @@ header h1 {
 
 /* Navigation Styles */
 nav {
-    background: #34495e;
+    font-family: 'Space Grotesk', sans-serif;
     overflow: hidden;
+    display: flex;
+    justify-content: space-evenly;
 }
 
 nav ul {
@@ -55,10 +74,11 @@ nav ul li a {
     padding: 15px 20px;
     text-decoration: none;
     text-transform: uppercase;
+    transition: text-shadow 0.3s ease;
 }
 
 nav ul li a:hover {
-    background: #2c3e50;
+    text-shadow: 3px 3px 8px rgba(24, 199, 65, 0.889);
 }
 
 /* Main Styles */
@@ -66,8 +86,12 @@ main {
     background: white;
     padding: 20px;
     margin-top: 20px;
+    /* Ensure it doesn't overlap with the fixed header and nav */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    /* Ajusta el valor para redondear las esquinas */
 }
+
 
 section {
     margin-bottom: 20px;
@@ -79,6 +103,12 @@ section h2 {
     font-size: 1.8em;
     border-bottom: 2px solid #2c3e50;
     padding-bottom: 5px;
+}
+
+section h3 {
+    color: #34495e;
+    margin-bottom: 10px;
+    font-size: 1.4em;
 }
 
 section p {
