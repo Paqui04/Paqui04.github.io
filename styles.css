@@ -5,93 +5,45 @@
     box-sizing: border-box;
 }
 
-/* Body Styles */
+.title{
+    color:white;
+}
+
+/* Full height layout */
+html, body {
+    height: 100%; /* Asegura que el html y body ocupen al menos el 100% de la altura del viewport */
+    min-height: 100vh; /* Asegura que siempre sea al menos igual a la altura del viewport */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 body {
     font-family: "Roboto Slab", serif;
-    font-style: normal;
-    font-optical-sizing: auto;
     color: #333;
     line-height: 1.6;
-    margin: 0;
-    padding-top: 130px;
-    --tw-bg-opacity: 1;
-    background-color: rgb(19 19 19 / var(--tw-bg-opacity));
+    background-color: rgb(19 19 19 / 1);
+    overflow-x: hidden; /* Previene el desbordamiento horizontal */
 }
 
-/* Container */
-.container {
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-}
-
+/* Header */
 .header {
-    background-image: url('space.webp');
+    background-image: url('./assets/space.webp');
+    background-size: cover;
     position: fixed;
     top: 0;
     width: 100%;
-    height: fit-content;
-}
-
-/* Header Styles */
-header {
-    font-family: "Freeman", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-    letter-spacing: .02em;
-    color: white;
-    padding: 20px 0;
-    text-align: center;
-    top: 0;
-}
-
-header h1 {
-    margin: 0;
-    font-size: 2.5em;
-}
-
-/* Navigation Styles */
-nav {
-    font-family: 'Space Grotesk', sans-serif;
-    overflow: hidden;
+    height: auto; /* Cambiado de fit-content a auto */
+    min-height: 100px; /* Altura mínima ajustable según el contenido */
     display: flex;
-    justify-content: space-evenly;
+    flex-direction: column; /* O 'row', dependiendo de tu diseño */
+    justify-content: center; /* Alinea el contenido verticalmente */
+    align-items: center; /* Alinea el contenido horizontalmente */
+    padding: 20px; /* Asegúrate de tener suficiente espacio interior */
+    box-sizing: border-box; /* Incluye el padding en el cálculo de la altura */
+    z-index: 1000; /* Mantiene el header sobre otros elementos */
 }
-
-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-nav ul li {
-    float: left;
-}
-
-nav ul li a {
-    display: block;
-    color: white;
-    padding: 15px 20px;
-    text-decoration: none;
-    text-transform: uppercase;
-    transition: text-shadow 0.3s ease;
-}
-
-nav ul li a:hover {
-    text-shadow: 3px 3px 8px rgba(24, 199, 65, 0.889);
-}
-
-/* Main Styles */
-main {
-    background: white;
-    padding: 20px;
-    margin-top: 20px;
-    /* Ensure it doesn't overlap with the fixed header and nav */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
-    /* Ajusta el valor para redondear las esquinas */
-}
-
 
 section {
     margin-bottom: 20px;
@@ -124,12 +76,53 @@ section ul li {
     margin-bottom: 5px;
 }
 
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Main Content */
+main {
+    flex-grow: 1; /* Permite que el main crezca para ocupar el espacio disponible */
+    background: white;
+    padding: 20px;
+    margin-top: 130px; /* Ajusta según la altura del header */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+/* Navigation Styles */
+nav {
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+nav ul {
+    width: 100%; /* Asegura que la navegación use todo el ancho disponible */
+    display: flex;
+    justify-content: space-around; /* Distribuye los elementos de la lista uniformemente */
+    padding: 0;
+    list-style: none;
+}
+
+nav ul li a {
+    color: white;
+    padding: 10px 15px; /* Ajusta el padding según sea necesario */
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+nav ul li a:hover {
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
 /* Footer Styles */
 footer {
     background: #2c3e50;
     color: white;
     text-align: center;
     padding: 10px 0;
-    position: relative;
-    margin-top: 20px;
+    margin-top: auto; /* Empuja el pie de página hacia abajo */
 }
