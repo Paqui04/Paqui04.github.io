@@ -126,3 +126,25 @@ footer {
     padding: 10px 0;
     margin-top: auto; /* Empuja el pie de página hacia abajo */
 }
+
+.content-wrapper {
+    display: flex;
+    align-items: flex-start; /* Alinea los elementos al inicio verticalmente */
+    justify-content: space-between; /* Separa los elementos horizontalmente */
+}
+
+.text-content {
+    flex: 1; /* Ocupa la mitad del espacio disponible */
+    padding-right: 20px; /* Añade espacio entre el texto y la imagen */
+}
+
+.image-content {
+    flex: 1; /* Ocupa la mitad del espacio disponible */
+    text-align: center; /* Centra la imagen dentro del div */
+}
+
+.image-content img {
+    max-width: 100%; /* Asegura que la imagen no exceda el ancho de su contenedor */
+    height: auto; /* Mantiene la relación de aspecto */
+    border-radius: 10px; /* Ajusta este valor para aumentar o disminuir el redondeo de las esquinas */
+}
