@@ -3,19 +3,14 @@ import {
   CheckCircle2,
   ClipboardList,
   CreditCard,
-  ExternalLink,
   LockKeyhole,
-  MessageCircle,
   PackageCheck,
-  Plus,
   RefreshCw,
   RotateCcw,
-  Trash2,
   UserCheck,
-  Wifi,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { bundles, products, STORE_CONFIG } from "./data.js";
+import { products, STORE_CONFIG } from "./data.js";
 import { availableUnits, formatMoney, storeApi } from "./storeApi.js";
 
 const STATUS_LABELS = {
@@ -32,6 +27,19 @@ function routeToView(path) {
     return "pay";
   }
   return "staff";
+}
+
+function routeToStaffSection(path) {
+  if (path.endsWith("/reservations")) {
+    return "reservations";
+  }
+  if (path.endsWith("/payments")) {
+    return "payments";
+  }
+  if (path.endsWith("/pickup")) {
+    return "pickup";
+  }
+  return "inventory";
 }
 
 function navigateTo(path) {
@@ -64,24 +72,6 @@ function useStoreSnapshot() {
   }, []);
 
   return { snapshot, loading, error, setError, refresh };
-}
-
-function getInventory(snapshot, productId, size) {
-  return snapshot?.inventory.find(
-    (item) => item.productId === productId && item.size === size,
-  );
-}
-
-function getAvailable(snapshot, productId, size) {
-  const inventory = getInventory(snapshot, productId, size);
-  return inventory ? availableUnits(inventory) : 0;
-}
-
-function totalForItems(items) {
-  return items.reduce((sum, item) => {
-    const product = products.find((entry) => entry.id === item.productId);
-    return sum + (product?.price || 0) * item.quantity;
-  }, 0);
 }
 
 function formatRemaining(expiresAt) {
@@ -125,7 +115,14 @@ function StatusPill({ status }) {
   return <span className={`status-pill status-${status}`}>{STATUS_LABELS[status] || status}</span>;
 }
 
-function StoreHeader({ activeView }) {
+const STAFF_NAV = [
+  { id: "inventory", label: "Inventory", path: "/cisco-live-store/inventory", icon: PackageCheck },
+  { id: "reservations", label: "Reservations", path: "/cisco-live-store/reservations", icon: ClipboardList },
+  { id: "payments", label: "Payments", path: "/cisco-live-store/payments", icon: CreditCard },
+  { id: "pickup", label: "Pickup token", path: "/cisco-live-store/pickup", icon: BadgeCheck },
+];
+
+function StoreHeader({ activeView, activeSection }) {
   const brandContent = (
     <>
       <span className="store-brand-mark">CL</span>
@@ -150,276 +147,23 @@ function StoreHeader({ activeView }) {
 
       {activeView !== "pay" ? (
         <nav className="store-nav" aria-label="Cisco Live Store navigation">
-          <button
-            className="is-active"
-            onClick={() => navigateTo("/cisco-live-store")}
-            type="button"
-          >
-            <ClipboardList size={16} />
-            Operations
-          </button>
+          {STAFF_NAV.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                className={activeSection === item.id ? "is-active" : ""}
+                key={item.id}
+                onClick={() => navigateTo(item.path)}
+                type="button"
+              >
+                <Icon size={16} />
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
       ) : null}
     </header>
-  );
-}
-
-function ProductCard({ product, snapshot, onAdd }) {
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
-  const available = getAvailable(snapshot, product.id, selectedSize);
-
-  return (
-    <article className="store-product-card">
-      <ProductVisual product={product} />
-      <div className="product-meta">
-        <div>
-          <p className="eyebrow">{product.collection}</p>
-          <h3>{product.name}</h3>
-          <p>{product.description}</p>
-        </div>
-        <strong>{formatMoney(product.price)}</strong>
-      </div>
-
-      <div className="size-row" aria-label={`${product.name} sizes`}>
-        {product.sizes.map((size) => {
-          const sizeAvailable = getAvailable(snapshot, product.id, size);
-          return (
-            <button
-              className={size === selectedSize ? "is-selected" : ""}
-              disabled={sizeAvailable <= 0}
-              key={size}
-              onClick={() => setSelectedSize(size)}
-              title={`${sizeAvailable} available`}
-              type="button"
-            >
-              {size}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="product-actions">
-        <span>{available} available</span>
-        <button
-          className="icon-button primary"
-          disabled={available <= 0}
-          onClick={() => onAdd(product.id, selectedSize)}
-          type="button"
-        >
-          <Plus size={16} />
-          Add
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function CartPanel({ cart, onReserve, onRemove, onClear, busy, reservation }) {
-  const total = totalForItems(cart);
-
-  return (
-    <aside className="store-cart-panel" aria-label="Agent reservation cart">
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">Agent action</p>
-          <h2>Reservation cart</h2>
-        </div>
-        <MessageCircle size={22} />
-      </div>
-
-      <div className="visitor-strip">
-        <Wifi size={18} />
-        <span>
-          {STORE_CONFIG.demoVisitor.name}
-          <small>{STORE_CONFIG.demoVisitor.source}</small>
-        </span>
-      </div>
-
-      {cart.length > 0 ? (
-        <div className="cart-lines">
-          {cart.map((item) => {
-            const product = products.find((entry) => entry.id === item.productId);
-            return (
-              <div className="cart-line" key={`${item.productId}-${item.size}`}>
-                <span>
-                  <strong>{product?.name}</strong>
-                  <small>
-                    Size {item.size} x {item.quantity}
-                  </small>
-                </span>
-                <button
-                  aria-label={`Remove ${product?.name}`}
-                  className="icon-only"
-                  onClick={() => onRemove(item.productId, item.size)}
-                  type="button"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="muted-copy">
-          Add products or choose a bundle to simulate what the WhatsApp agent reserves.
-        </p>
-      )}
-
-      <div className="cart-total">
-        <span>Total</span>
-        <strong>{formatMoney(total)}</strong>
-      </div>
-
-      <div className="cart-actions">
-        <button
-          className="icon-button primary"
-          disabled={cart.length === 0 || busy}
-          onClick={onReserve}
-          type="button"
-        >
-          <CreditCard size={16} />
-          Reserve and create link
-        </button>
-        <button
-          className="icon-button ghost"
-          disabled={cart.length === 0 || busy}
-          onClick={onClear}
-          type="button"
-        >
-          <RotateCcw size={16} />
-          Clear
-        </button>
-      </div>
-
-      {reservation ? (
-        <div className="reservation-result">
-          <span className="result-code">{reservation.code}</span>
-          <p>
-            Reserved for {STORE_CONFIG.reservationMinutes} minutes. Send this payment
-            link in WhatsApp.
-          </p>
-          <a className="icon-button success" href={reservation.paymentLink}>
-            <ExternalLink size={16} />
-            Open payment link
-          </a>
-        </div>
-      ) : null}
-    </aside>
-  );
-}
-
-function BundleRail({ onApplyBundle }) {
-  return (
-    <section className="bundle-rail" aria-label="Agent bundle presets">
-      {bundles.map((bundle) => (
-        <button key={bundle.id} onClick={() => onApplyBundle(bundle)} type="button">
-          <PackageCheck size={18} />
-          <span>
-            <strong>{bundle.name}</strong>
-            <small>{bundle.description}</small>
-          </span>
-        </button>
-      ))}
-    </section>
-  );
-}
-
-function AgentSimulatorPanel({ snapshot, refresh, setError }) {
-  const [cart, setCart] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [reservation, setReservation] = useState(null);
-
-  function addToCart(productId, size, quantity = 1) {
-    setReservation(null);
-    setCart((current) => {
-      const existing = current.find(
-        (item) => item.productId === productId && item.size === size,
-      );
-      if (existing) {
-        return current.map((item) =>
-          item.productId === productId && item.size === size
-            ? { ...item, quantity: item.quantity + quantity }
-            : item,
-        );
-      }
-
-      return [...current, { productId, size, quantity }];
-    });
-  }
-
-  function removeFromCart(productId, size) {
-    setCart((current) =>
-      current.filter((item) => item.productId !== productId || item.size !== size),
-    );
-  }
-
-  function applyBundle(bundle) {
-    setReservation(null);
-    for (const item of bundle.items) {
-      addToCart(item.productId, item.size, item.quantity);
-    }
-  }
-
-  async function reserveCart() {
-    try {
-      setBusy(true);
-      setError("");
-      const nextReservation = await storeApi.createReservation({
-        visitor: STORE_CONFIG.demoVisitor,
-        items: cart,
-        source: "webex-agent",
-      });
-      setReservation(nextReservation);
-      setCart([]);
-      await refresh();
-    } catch (err) {
-      setError(err.message || "Unable to reserve cart.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section className="staff-section agent-simulator">
-      <div className="staff-section-heading">
-        <div>
-          <p className="eyebrow">Internal demo tool</p>
-          <h2>Agent reservation simulator</h2>
-        </div>
-        <span>Creates the customer payment link</span>
-      </div>
-      <p className="muted-copy">
-        This panel represents what Webex AI Agent Studio would do through API calls:
-        reserve inventory, create a temporary cart, and send a payment URL by WhatsApp.
-      </p>
-
-      <BundleRail onApplyBundle={applyBundle} />
-
-      <section className="store-layout">
-        <div className="product-grid">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              onAdd={addToCart}
-              product={product}
-              snapshot={snapshot}
-            />
-          ))}
-        </div>
-
-        <CartPanel
-          busy={busy}
-          cart={cart}
-          onClear={() => {
-            setCart([]);
-            setReservation(null);
-          }}
-          onRemove={removeFromCart}
-          onReserve={reserveCart}
-          reservation={reservation}
-        />
-      </section>
-    </section>
   );
 }
 
@@ -581,7 +325,10 @@ function InventoryTable({ snapshot }) {
   return (
     <div className="staff-section">
       <div className="staff-section-heading">
-        <h2>Inventory</h2>
+        <div>
+          <p className="eyebrow">Inventory only</p>
+          <h2>Inventory</h2>
+        </div>
         <span>{rows.length} SKUs</span>
       </div>
       <div className="table-wrap">
@@ -616,13 +363,16 @@ function InventoryTable({ snapshot }) {
 }
 
 function ReservationList({ snapshot }) {
-  const reservations = snapshot.reservations.slice(0, 8);
+  const reservations = snapshot.reservations;
 
   return (
     <div className="staff-section">
       <div className="staff-section-heading">
-        <h2>Reservations</h2>
-        <span>{reservations.length} recent</span>
+        <div>
+          <p className="eyebrow">Reservations only</p>
+          <h2>Reservations</h2>
+        </div>
+        <span>{reservations.length} total</span>
       </div>
       <div className="staff-list">
         {reservations.length > 0 ? (
@@ -633,6 +383,7 @@ function ReservationList({ snapshot }) {
                 <small>
                   {reservation.visitor.name} - {formatMoney(reservation.total)}
                 </small>
+                <small>{reservation.items.length} item types</small>
               </div>
               <span>{formatRemaining(reservation.expiresAt)}</span>
               <StatusPill status={reservation.status} />
@@ -646,9 +397,44 @@ function ReservationList({ snapshot }) {
   );
 }
 
-function OrderList({ snapshot, onPickup, busyCode }) {
+function PaymentList({ snapshot }) {
+  const orders = snapshot.orders;
+
+  return (
+    <div className="staff-section">
+      <div className="staff-section-heading">
+        <div>
+          <p className="eyebrow">Payments only</p>
+          <h2>Paid orders</h2>
+        </div>
+        <span>{orders.length} total</span>
+      </div>
+      <div className="staff-list">
+        {orders.length > 0 ? (
+          orders.map((order) => (
+            <article key={order.id}>
+              <div>
+                <strong>{order.id}</strong>
+                <small>
+                  {order.visitor.name} - {order.reservationCode} - {formatMoney(order.total)}
+                </small>
+                <code>{order.pickupToken || "No pickup token"}</code>
+              </div>
+              <StatusPill status={order.status} />
+            </article>
+          ))
+        ) : (
+          <p className="muted-copy">No mock payments completed yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PickupTokenPanel({ snapshot, onPickup, busyCode }) {
   const [pickupToken, setPickupToken] = useState("");
-  const orders = snapshot.orders.slice(0, 8);
+  const readyOrders = snapshot.orders.filter((order) => order.status === "paid_mock");
+  const pickedOrders = snapshot.orders.filter((order) => order.status === "picked_up");
 
   function submitPickup(event) {
     event.preventDefault();
@@ -664,8 +450,11 @@ function OrderList({ snapshot, onPickup, busyCode }) {
   return (
     <div className="staff-section">
       <div className="staff-section-heading">
-        <h2>Orders</h2>
-        <span>{orders.length} paid</span>
+        <div>
+          <p className="eyebrow">Counter workflow</p>
+          <h2>Pickup token</h2>
+        </div>
+        <span>{readyOrders.length} ready</span>
       </div>
       <form className="pickup-token-form" onSubmit={submitPickup}>
         <input
@@ -679,9 +468,11 @@ function OrderList({ snapshot, onPickup, busyCode }) {
           Pick up
         </button>
       </form>
+
+      <h3 className="subsection-title">Ready for pickup</h3>
       <div className="staff-list">
-        {orders.length > 0 ? (
-          orders.map((order) => (
+        {readyOrders.length > 0 ? (
+          readyOrders.map((order) => (
             <article key={order.id}>
               <div>
                 <strong>{order.id}</strong>
@@ -691,27 +482,45 @@ function OrderList({ snapshot, onPickup, busyCode }) {
                 <code>{order.pickupToken || "No pickup token"}</code>
               </div>
               <StatusPill status={order.status} />
-              {order.status !== "picked_up" ? (
-                <button
-                  className="icon-button compact"
-                  disabled={busyCode === (order.pickupToken || order.reservationCode)}
-                  onClick={() =>
-                    onPickup(
-                      order.pickupToken
-                        ? { pickupToken: order.pickupToken }
-                        : { reservationCode: order.reservationCode },
-                    )
-                  }
-                  type="button"
-                >
-                  <BadgeCheck size={15} />
-                  Picked up
-                </button>
-              ) : null}
+              <button
+                className="icon-button compact"
+                disabled={busyCode === (order.pickupToken || order.reservationCode)}
+                onClick={() =>
+                  onPickup(
+                    order.pickupToken
+                      ? { pickupToken: order.pickupToken }
+                      : { reservationCode: order.reservationCode },
+                  )
+                }
+                type="button"
+              >
+                <BadgeCheck size={15} />
+                Picked up
+              </button>
             </article>
           ))
         ) : (
-          <p className="muted-copy">No mock payments completed yet.</p>
+          <p className="muted-copy">No paid orders waiting for pickup.</p>
+        )}
+      </div>
+
+      <h3 className="subsection-title">Picked up</h3>
+      <div className="staff-list">
+        {pickedOrders.length > 0 ? (
+          pickedOrders.map((order) => (
+            <article key={order.id}>
+              <div>
+                <strong>{order.id}</strong>
+                <small>
+                  {order.visitor.name} - {order.reservationCode} - {formatMoney(order.total)}
+                </small>
+                <code>{order.pickupToken || "No pickup token"}</code>
+              </div>
+              <StatusPill status={order.status} />
+            </article>
+          ))
+        ) : (
+          <p className="muted-copy">No orders have been picked up yet.</p>
         )}
       </div>
     </div>
@@ -737,7 +546,7 @@ function EventLog({ snapshot }) {
   );
 }
 
-function StaffView({ snapshot, refresh, setError }) {
+function StaffView({ activeSection, snapshot, refresh, setError }) {
   const [unlocked, setUnlocked] = useState(() => {
     try {
       return window.sessionStorage?.getItem("cisco-live-store-staff") === "unlocked";
@@ -785,9 +594,9 @@ function StaffView({ snapshot, refresh, setError }) {
           <p className="eyebrow">Internal company system</p>
           <h1>Store operations console</h1>
           <p>
-            This is the employee-side system for inventory, reservations, paid
-            mock orders, pickup status, and agent activity. Customers only see
-            the payment URL generated from a reservation.
+            This is the employee-side system for inventory, reservations, mock
+            payments, and pickup token validation. Customers only see the
+            payment URL generated by the WhatsApp agent.
           </p>
         </div>
         <div className="staff-actions">
@@ -821,26 +630,33 @@ function StaffView({ snapshot, refresh, setError }) {
         </div>
       </section>
 
-      <AgentSimulatorPanel refresh={refresh} setError={setError} snapshot={snapshot} />
-
-      <section className="staff-grid">
-        <InventoryTable snapshot={snapshot} />
-        <ReservationList snapshot={snapshot} />
-        <OrderList busyCode={busyCode} onPickup={markPickedUp} snapshot={snapshot} />
-        <EventLog snapshot={snapshot} />
+      <section className="staff-screen">
+        {activeSection === "inventory" ? <InventoryTable snapshot={snapshot} /> : null}
+        {activeSection === "reservations" ? <ReservationList snapshot={snapshot} /> : null}
+        {activeSection === "payments" ? <PaymentList snapshot={snapshot} /> : null}
+        {activeSection === "pickup" ? (
+          <PickupTokenPanel
+            busyCode={busyCode}
+            onPickup={markPickedUp}
+            snapshot={snapshot}
+          />
+        ) : null}
       </section>
+
+      <EventLog snapshot={snapshot} />
     </>
   );
 }
 
 export default function CiscoLiveStoreDemo({ route }) {
   const view = routeToView(route.path);
+  const activeSection = routeToStaffSection(route.path);
   const { snapshot, loading, error, setError, refresh } = useStoreSnapshot();
 
   if (loading || !snapshot) {
     return (
       <div className="store-demo">
-        <StoreHeader activeView={view} />
+        <StoreHeader activeSection={activeSection} activeView={view} />
         <main className="store-loading">
           <RefreshCw size={22} />
           <span>Loading store demo...</span>
@@ -851,7 +667,7 @@ export default function CiscoLiveStoreDemo({ route }) {
 
   return (
     <div className="store-demo">
-      <StoreHeader activeView={view} />
+      <StoreHeader activeSection={activeSection} activeView={view} />
       {error ? (
         <div className="store-alert" role="alert">
           {error}
@@ -868,7 +684,12 @@ export default function CiscoLiveStoreDemo({ route }) {
           />
         ) : null}
         {view === "staff" ? (
-          <StaffView refresh={refresh} setError={setError} snapshot={snapshot} />
+          <StaffView
+            activeSection={activeSection}
+            refresh={refresh}
+            setError={setError}
+            snapshot={snapshot}
+          />
         ) : null}
       </main>
     </div>
