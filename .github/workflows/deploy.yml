@@ -30,6 +30,11 @@ jobs:
         run: npm install
 
       - name: Build
+        env:
+          VITE_SUPABASE_URL: https://hxvrexlaunwamytsskrj.supabase.co
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_STORE_STAFF_PIN: ${{ vars.VITE_STORE_STAFF_PIN || '2468' }}
+          VITE_PAYMENT_BASE_URL: https://paqui04.github.io/
         run: npm run build
 
       - name: Upload artifact
