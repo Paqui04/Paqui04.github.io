@@ -1,4 +1,65 @@
 import { demos } from "./demos/index.js";
+import CiscoLiveStoreDemo from "./demos/cisco-live-store/CiscoLiveStoreDemo.jsx";
+import "./demos/cisco-live-store/ciscoLiveStore.css";
+import { Component, useEffect, useState } from "react";
+
+function getHashPath() {
+  const hash = window.location.hash.replace(/^#/, "") || "/";
+  const [path, query = ""] = hash.split("?");
+
+  return {
+    path: path.startsWith("/") ? path : `/${path}`,
+    query: new URLSearchParams(query),
+  };
+}
+
+function useHashRoute() {
+  const [route, setRoute] = useState(getHashPath);
+
+  useEffect(() => {
+    const handleHashChange = () => setRoute(getHashPath());
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  return route;
+}
+
+class DemoErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="app-shell">
+          <main>
+            <section className="empty-state" aria-live="polite">
+              <div className="empty-icon" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <div>
+                <h2>Demo unavailable</h2>
+                <p>{this.state.error.message}</p>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function Header() {
   return (
@@ -86,6 +147,16 @@ function DemoCatalog() {
 }
 
 export default function App() {
+  const route = useHashRoute();
+
+  if (route.path.startsWith("/cisco-live-store")) {
+    return (
+      <DemoErrorBoundary>
+        <CiscoLiveStoreDemo route={route} />
+      </DemoErrorBoundary>
+    );
+  }
+
   return (
     <div className="app-shell">
       <Header />
