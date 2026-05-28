@@ -64,7 +64,7 @@ export function createEmptyState() {
       {
         id: crypto.randomUUID(),
         type: "system.seeded",
-        message: "Demo catalog and inventory initialized.",
+        message: "Catalog and inventory initialized.",
         createdAt: nowIso(),
       },
     ],
@@ -237,7 +237,7 @@ function uniquePickupToken(state) {
 
 function createLocalApi() {
   return {
-    mode: "local demo",
+    mode: "local",
 
     async getSnapshot() {
       return readState();
